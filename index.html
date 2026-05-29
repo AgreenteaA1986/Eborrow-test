@@ -945,6 +945,7 @@
     }
 
     // 📦 🔄 [สร้างระบบเปิดแสดงผลฝั่งหน้าคืนพัสดุ] ดึงประวัติบิลที่มีคนกดแจ้งกำลังส่งคืนมาวาดกล่องโครงสร้างให้เรียบร้อย
+    // 📦 🔄 ฟังก์ชันวาดการ์ดตรวจรับคืนพัสดุฉบับปรับปรุงตามบรีฟรูปภาพ (ดึงวันที่ยืม + ปรับดีไซน์ตามตัวอย่าง)
     function loadReturnList() {
       const container = document.getElementById('return-selector-list');
       container.innerHTML = '<div class="text-center p-4 text-muted"><div class="spinner-border text-primary spinner-border-sm me-2"></div>กำลังดึงรายชื่อบิลพัสดุที่รอส่งคืน...</div>';
@@ -958,27 +959,52 @@
           }
           
           container.innerHTML = data.map(group => {
-            let itemLines = group.items.map(it => `⚡ ${it.itemName} จำนวน ${it.itemQty} ${it.itemUnit}`).join('<br>');
+            // วาดรายการพัสดุแบบเรียงลำดับ 1, 2, 3 พร้อมรหัส และจำนวนสีน้ำเงินชิดขวาตามรูปตัวอย่าง
+            let itemLines = group.items.map((it, idx) => `
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color: #f1f5f9 !important; font-size: 0.85rem;">
+                <span class="text-secondary"><b>${idx + 1}.</b> ${it.itemName} <span class="text-muted">(รหัส: ${it.itemId})</span></span>
+                <span class="text-primary fw-bold">${it.itemQty} <span class="text-primary">${it.itemUnit || 'ชิ้น'}</span></span>
+              </div>
+            `).join('');
+
             return `
-              <div class="list-group-item bg-white p-4 border-0 shadow-sm rounded-4 mb-3 animate-fade-in" style="border: 1px solid #f1f5f9 !important;">
-                <div class="w-100">
-                  <!-- ส่วนข้อมูลหัวบิลผู้ส่งคืน -->
-                  <h6 class="fw-bold text-dark mb-1">👤 ผู้ส่งคืน: ${group.userName} <span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">รอตรวจสอบพัสดุ</span></h6>
-                  <p class="small text-secondary mb-1">🆔 รหัสพนักงาน: <b>${group.empId}</b> | 🏢 แผนก: ${group.dept}</p>
-                  <p class="small text-secondary mb-2">📍 สังกัด: ${group.region} (${group.area}) | 📅 แจ้งคืนเมื่อ: <span class="text-danger fw-bold">${group.date}</span></p>
-                  
-                  <!-- กล่องรายการพัสดุค้างคืน (จุดที่ขีดเส้นใต้สีเขียว) -->
-                  <div class="bg-light p-3 rounded-3 text-dark small font-monospace border border-light mb-3" style="font-size:0.78rem;">
-                    ${itemLines}
+              <div class="list-group-item bg-white p-4 border-0 shadow-sm rounded-4 mb-3 animate-fade-in" style="border-left: 5px solid #00d2ff !important; border-top: 1px solid #f1f5f9 !important; border-right: 1px solid #f1f5f9 !important; border-bottom: 1px solid #f1f5f9 !important;">
+                
+                <!-- ส่วนที่ 1: ส่วนหัวข้อมูลการ์ด (บนซ้าย - บนขวา) -->
+                <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                  <div>
+                    <h6 class="fw-bold text-dark mb-1.5" style="font-size: 0.95rem;">
+                      <i class="bi bi-person-circle text-primary me-1"></i> ${group.userName} <span class="text-muted fw-normal" style="font-size: 0.82rem;">(ID: ${group.empId})</span>
+                    </h6>
+                    <div class="small text-secondary d-flex flex-wrap gap-2 align-items-center" style="font-size: 0.8rem;">
+                      <span>🏢 สังกัด: <b>${group.dept}</b></span> |
+                      <span>🗺️ ภาค: <b>${group.region}</b></span> |
+                      <span>📍 เขต: <b>${group.area}</b></span>
+                    </div>
                   </div>
                   
-                  <!-- 🎯 [ย้ายพิกัดปุ่มสำเร็จ] นำปุ่มตรวจรับของคืนมาต่อท้ายกล่องรายการพัสดุด้านล่างทันที -->
-                  <div class="text-start">
-                    <button class="btn btn-primary px-4 rounded-pill fw-bold text-white shadow-sm" style="font-size:0.82rem; py: 2px;" onclick='openProcessReturnModal(${JSON.stringify(group)})'>
-                      <i class="bi bi-camera-fill me-1"></i> ตรวจรับของคืน
-                    </button>
+                  <!-- ดึงข้อมูลวันที่ยืม และ วันที่แจ้งคืนมาแสดงผลฝั่งขวาตามแบบเป๊ะๆ -->
+                  <div class="text-end small" style="font-size: 0.78rem;">
+                    <div class="text-secondary mb-1"><i class="bi bi-calendar-event text-primary me-1"></i> วันที่ยืม: <span class="fw-bold">${group.borrowDate || '-'}</span></div>
+                    <div class="text-danger"><i class="bi bi-clock-history me-1"></i> แจ้งคืนเมื่อ: <span class="fw-bold">${group.date}</span></div>
                   </div>
                 </div>
+                
+                <!-- ส่วนที่ 2: กล่องตารางรายการพัสดุที่แจ้งส่งคืน -->
+                <div class="mb-3">
+                  <div class="text-info small fw-bold mb-2" style="font-size: 0.85rem;"><i class="bi bi-box-seam me-1"></i> รายการพัสดุที่แจ้งส่งคืน</div>
+                  <div class="bg-light p-3 rounded-3 border border-light">
+                    ${itemLines}
+                  </div>
+                </div>
+                
+                <!-- ส่วนที่ 3: ปุ่มลิงก์ข้อความกึ่งกลางสไตล์กิมมิคเปิดกล้องส่องรับคืน -->
+                <div class="text-center mt-3">
+                  <button class="btn btn-link text-decoration-none fw-bold text-primary p-0 bg-transparent border-0 small" style="font-size: 0.85rem; letter-spacing: 0.3px;" onclick='openProcessReturnModal(${JSON.stringify(group)})'>
+                    <i class="bi bi-camera-fill me-1"></i> คลิกเพื่อเปิดกล้องเว็บแคมและเซ็นรับคืนพัสดุ >
+                  </button>
+                </div>
+
               </div>`;
           }).join('');
         })
