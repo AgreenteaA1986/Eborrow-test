@@ -960,17 +960,24 @@
           container.innerHTML = data.map(group => {
             let itemLines = group.items.map(it => `⚡ ${it.itemName} จำนวน ${it.itemQty} ${it.itemUnit}`).join('<br>');
             return `
-              <div class="list-group-item bg-white p-3 border-0 shadow-sm rounded-4 mb-3 d-flex justify-content-between align-items-center animate-fade-in" style="border: 1px solid #f1f5f9 !important;">
-                <div>
+              <div class="list-group-item bg-white p-4 border-0 shadow-sm rounded-4 mb-3 animate-fade-in" style="border: 1px solid #f1f5f9 !important;">
+                <div class="w-100">
+                  <!-- ส่วนข้อมูลหัวบิลผู้ส่งคืน -->
                   <h6 class="fw-bold text-dark mb-1">👤 ผู้ส่งคืน: ${group.userName} <span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">รอตรวจสอบพัสดุ</span></h6>
                   <p class="small text-secondary mb-1">🆔 รหัสพนักงาน: <b>${group.empId}</b> | 🏢 แผนก: ${group.dept}</p>
                   <p class="small text-secondary mb-2">📍 สังกัด: ${group.region} (${group.area}) | 📅 แจ้งคืนเมื่อ: <span class="text-danger fw-bold">${group.date}</span></p>
-                  <div class="bg-light p-2.5 rounded-3 text-dark small font-monospace border border-light" style="font-size:0.78rem;">${itemLines}</div>
-                </div>
-                <div>
-                  <button class="btn btn-primary px-3 rounded-pill fw-bold text-white small shadow-sm" style="font-size:0.8rem;" onclick='openProcessReturnModal(${JSON.stringify(group)})'>
-                    <i class="bi bi-camera-fill me-1"></i> ตรวจรับของคืน
-                  </button>
+                  
+                  <!-- กล่องรายการพัสดุค้างคืน (จุดที่ขีดเส้นใต้สีเขียว) -->
+                  <div class="bg-light p-3 rounded-3 text-dark small font-monospace border border-light mb-3" style="font-size:0.78rem;">
+                    ${itemLines}
+                  </div>
+                  
+                  <!-- 🎯 [ย้ายพิกัดปุ่มสำเร็จ] นำปุ่มตรวจรับของคืนมาต่อท้ายกล่องรายการพัสดุด้านล่างทันที -->
+                  <div class="text-start">
+                    <button class="btn btn-primary px-4 rounded-pill fw-bold text-white shadow-sm" style="font-size:0.82rem; py: 2px;" onclick='openProcessReturnModal(${JSON.stringify(group)})'>
+                      <i class="bi bi-camera-fill me-1"></i> ตรวจรับของคืน
+                    </button>
+                  </div>
                 </div>
               </div>`;
           }).join('');
