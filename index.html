@@ -743,6 +743,7 @@
         .catch(err => console.error("Error updating return badge:", err));
     }
 
+    // 🎨 ฟังก์ชันวาดตาราง Dashboard รวมศูนย์ตัวพรีเมียม (เพิ่มคอลัมน์ วันที่อนุมัติล่าสุด, วันที่ส่งคืน, วันที่รับของคืน)
     function loadDashboardList(type) {
       lastDashboardType = type; 
       const listDiv = document.getElementById('dashboard-list');
@@ -759,17 +760,20 @@
           let html = `
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate-fade-in">
               <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.81rem;">
                   <thead class="table-light fw-bold" style="background-color: #f8f9fa; border-bottom: 2px solid #edf2f7; white-space: nowrap;">
                     <tr class="text-dark">
                       <th class="ps-4 py-3">ชื่อผู้ยืม</th>
                       <th class="py-3">รหัสพนักงาน</th>
-                      <th class="py-3">สังกัด</th>
-                      <th class="py-3">ภาค/เขต</th>
+                      <th class="py-3">สังกัด/ภูมิภาค</th>
                       <th class="py-3">รหัสพัสดุ</th>
                       <th class="py-3">ชื่อพัสดุ</th>
                       <th class="py-3">จำนวน</th>
                       <th class="py-3">วันที่ยืม</th>
+                      <!-- 📅 เพิ่มหัวข้อคอลัมน์วันที่สำคัญตามบรีฟองค์กร -->
+                      <th class="py-3">วันที่อนุมัติ</th>
+                      <th class="py-3">วันที่ส่งคืน</th>
+                      <th class="py-3">วันที่รับคืน</th>
                       <th class="py-3">สถานะ</th>
                       <th class="pe-4 py-3 text-center" style="min-width: 120px;">จัดการ</th>
                     </tr>
@@ -790,19 +794,24 @@
                 <tr>
                   <td class="ps-4 py-3 fw-bold text-dark">${index === 0 ? group.userName : `<span class="text-muted opacity-25">”</span>`}</td>
                   <td class="py-3 text-dark">${index === 0 ? group.empId : ""}</td>
-                  <td class="py-3 text-dark">${index === 0 ? (group.dept || "-") : ""}</td>
-                  <td class="py-3 text-dark">${index === 0 ? `${group.region || '-'} / ${group.area || '-'}` : ""}</td>
+                  <td class="py-3 text-dark">${index === 0 ? `${group.dept || '-'} (${group.area || '-'})` : ""}</td>
                   
-                  <td class="py-3 font-monospace text-dark" style="font-size: 0.78rem; font-weight: 600;">${item.itemId}</td>
+                  <td class="py-3 font-monospace text-dark" style="font-size: 0.75rem; font-weight: 600;">${item.itemId}</td>
                   <td class="py-3 fw-bold text-dark text-wrap">${item.itemName}</td>
                   <td class="py-3 text-dark">
-                    <span class="fw-bold text-primary" style="font-size: 0.88rem;">${item.itemQty}</span>
-                    <span class="fw-bold">${item.itemUnit || "หน่วย"}</span>
+                    <span class="fw-bold text-primary" style="font-size: 0.85rem;">${item.itemQty}</span>
+                    <span class="text-secondary small">${item.itemUnit || "หน่วย"}</span>
                   </td>
                   
                   <td class="py-3 text-dark">${index === 0 ? group.date : ""}</td>
+                  
+                  <!-- 🎯 ดึงประวัติข้อมูลวันที่สำคัญทั้ง 3 รูปแบบมาแสดงผลเฉพาะแถวแรกของบิล -->
+                  <td class="py-3 text-secondary">${index === 0 ? (group.approveDate || "-") : ""}</td>
+                  <td class="py-3 text-secondary">${index === 0 ? (group.returnDate || "-") : ""}</td>
+                  <td class="py-3 text-success fw-bold">${index === 0 ? (group.receiveDate || "-") : ""}</td>
+                  
                   <td class="py-3">
-                    ${index === 0 ? `<span class="badge px-2.5 py-1.5 rounded-pill fw-semibold" style="font-size: 0.7rem; ${badgeStyle}">${group.status}</span>` : ""}
+                    ${index === 0 ? `<span class="badge px-2.5 py-1.5 rounded-pill fw-semibold" style="font-size: 0.68rem; ${badgeStyle}">${group.status}</span>` : ""}
                   </td>
                   
                   <td class="pe-4 py-2 text-center">
