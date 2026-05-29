@@ -850,8 +850,9 @@
         }).catch(err => console.error("Error drawing unified dashboard list:", err));
     }
 
-    // 👁️ ฟังก์ชันกดรูปดวงตา: แกะข้อมูลหลังบ้านขึ้นระเบิดรายละเอียดสัญญา ภาพถ่ายใบหน้า ลายเซ็นทุกฝ่าย
+    // 👁️ ฟังก์ชันดวงตาฉบับอัปเกรด: เพิ่มการแสดงผล รูปลายเซ็น และ วันที่เซ็นอนุมัติ ครบถ้วนทุกมิติ
     function viewFullDetailsDetail(group) {
+      // ฟังก์ชันแปลงลิงก์รูปภาพใน Google Drive ให้แสดงผลได้เสถียร
       const getImgHtml = (photoUrl) => {
         if(!photoUrl || photoUrl === "-" || photoUrl.includes("ไม่ได้แนบ") || photoUrl.includes("ขัดข้อง")) {
           return `<div class="p-2 text-center text-muted bg-white border border-light rounded-3 small" style="height:100px; display:flex; align-items:center; justify-content:center; font-size:10px;">ไม่มีรูปถ่าย</div>`;
@@ -862,6 +863,22 @@
           if (matches) clean = "https://drive.google.com/thumbnail?id=" + matches[1] + "&sz=w300";
         }
         return `<img src="${clean}" class="rounded-3 shadow-sm border border-light" style="width:100%; height:105px; object-fit:cover; display:block;">`;
+      };
+
+      // ฟังก์ชันดึงและแปลงลิงก์ รูปลายเซ็น ดิจิทัลมาแสดงผลซ้อนสไตล์พรีเมียม
+      const getSigHtml = (sigUrl) => {
+        if(!sigUrl || sigUrl === "-" || sigUrl.includes("ลายเซ็นไม่สำเร็จ")) {
+          return `<div style="height:35px; border-top:1px dashed #ccc; padding-top:4px;" class="small text-muted text-center">SIGNED ✅</div>`;
+        }
+        let clean = sigUrl;
+        if (sigUrl.includes("id=")) {
+          let matches = sigUrl.match(/id=([^&"'\s)]+)/);
+          if (matches) clean = "https://drive.google.com/thumbnail?id=" + matches[1] + "&sz=w300";
+        }
+        return `
+          <div class="position-relative mt-2 pt-1" style="border-top: 1px solid black !important;">
+            <img src="${clean}" style="position: absolute; top: -28px; left: 50%; transform: translateX(-50%); width: 75px; height: 35px; object-fit: contain; pointer-events: none; filter: drop-shadow(1px 1px 1px white); z-index: 10;">
+          </div>`;
       };
 
       let itemsLi = (group.items || []).map((p, idx) => `
@@ -887,20 +904,41 @@
         
         <h6 class="fw-bold text-dark mb-2 small ps-1"><i class="bi bi-shield-check text-success"></i> ตรรกะและประวัติการเซ็นแสตมป์อนุมัติ</h6>
         <div class="row g-2 text-center mb-3">
+          
+          <!-- สเต็ปที่ 1: หัวหน้าแผนก -->
           <div class="col-4 border-end">
             <small class="fw-bold text-secondary d-block" style="font-size:0.65rem;">1. หัวหน้าแผนก</small>
             <div class="my-1.5 mx-auto" style="width:70px; height:95px;">${getImgHtml(group.appr1?.photo)}</div>
-            <span class="small d-block text-dark text-truncate fw-bold">(${group.appr1?.name && group.appr1.name !== "-" ? group.appr1.name : 'รออนุมัติ'})</span>
+            
+            <!-- ✍️ เพิ่มพื้นที่แสดงภาพลายเซ็นซ้อนเส้นระเบียบ -->
+            ${getSigHtml(group.appr1?.sig)}
+            <span class="small d-block text-dark text-truncate fw-bold" style="margin-top: 2px;">(${group.appr1?.name && group.appr1.name !== "-" ? group.appr1.name : 'รออนุมัติ'})</span>
+            <!-- 📅 เพิ่มบรรทัดแสดงวันที่เซ็นอนุมัติสลักสีแดงคมชัด -->
+            <span class="d-block text-danger fw-normal" style="font-size: 0.65rem; margin-top: 1px;">📅 ${group.appr1?.date && group.appr1.date !== "-" ? group.appr1.date : "-"}</span>
           </div>
+          
+          <!-- สเต็ปที่ 2: ผู้จัดการ -->
           <div class="col-4 border-end">
             <small class="fw-bold text-secondary d-block" style="font-size:0.65rem;">2. ผู้จัดการ</small>
             <div class="my-1.5 mx-auto" style="width:70px; height:95px;">${getImgHtml(group.appr2?.photo)}</div>
-            <span class="small d-block text-dark text-truncate fw-bold">(${group.appr2?.name && group.appr2.name !== "-" ? group.appr2.name : 'รออนุมัติ'})</span>
+            
+            <!-- ✍️ เพิ่มพื้นที่แสดงภาพลายเซ็นซ้อนเส้นระเบียบ -->
+            ${getSigHtml(group.appr2?.sig)}
+            <span class="small d-block text-dark text-truncate fw-bold" style="margin-top: 2px;">(${group.appr2?.name && group.appr2.name !== "-" ? group.appr2.name : 'รออนุมัติ'})</span>
+            <!-- 📅 เพิ่มบรรทัดแสดงวันที่เซ็นอนุมัติสลักสีแดงคมชัด -->
+            <span class="d-block text-danger fw-normal" style="font-size: 0.65rem; margin-top: 1px;">📅 ${group.appr2?.date && group.appr2.date !== "-" ? group.appr2.date : "-"}</span>
           </div>
+          
+          <!-- สเต็ปที่ 3: คลังพัสดุ -->
           <div class="col-4">
             <small class="fw-bold text-secondary d-block" style="font-size:0.65rem;">3. คลังพัสดุ</small>
             <div class="my-1.5 mx-auto" style="width:70px; height:95px;">${getImgHtml(group.appr3?.photo)}</div>
-            <span class="small d-block text-dark text-truncate fw-bold">(${group.appr3?.name && group.appr3.name !== "-" ? group.appr3.name : 'รออนุมัติ'})</span>
+            
+            <!-- ✍️ เพิ่มพื้นที่แสดงภาพลายเซ็นซ้อนเส้นระเบียบ -->
+            ${getSigHtml(group.appr3?.sig)}
+            <span class="small d-block text-dark text-truncate fw-bold" style="margin-top: 2px;">(${group.appr3?.name && group.appr3.name !== "-" ? group.appr3.name : 'รออนุมัติ'})</span>
+            <!-- 📅 เพิ่มบรรทัดแสดงวันที่เซ็นอนุมัติสลักสีแดงคมชัด -->
+            <span class="d-block text-danger fw-normal" style="font-size: 0.65rem; margin-top: 1px;">📅 ${group.appr3?.date && group.appr3.date !== "-" ? group.appr3.date : "-"}</span>
           </div>
         </div>
         
