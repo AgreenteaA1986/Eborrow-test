@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+  
+  <style>
+  /* --- 1. Global Variables & Base Styles --- */
+  :root { 
+    --primary-color: #a31d8e; 
+    --primary-gradient: linear-gradient(135deg, #a31d8e, #7a156a); 
+    --bg-light: #f8f4f9; 
+    --card-shadow: 0 10px 25px rgba(163, 29, 142, 0.08); 
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 75px;
+  }
+
+  body { 
+    background-color: var(--bg-light); 
+    font-family: 'Sarabun', sans-serif; 
+    color: #2d3748; 
+    overflow-x: hidden;
+    margin: 0; padding: 0;
+  }
+
+  .wrapper { display: flex; align-items: stretch; width: 100vw; height: 100vh; overflow: hidden; }
+
+  /* --- 2. Sidebar Navigation --- */
+  .sidebar {
+    min-width: var(--sidebar-width); max-width: var(--sidebar-width);
+    background: white; box-shadow: 4px 0 20px rgba(163, 29, 142, 0.05);
+    z-index: 1040; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column; position: relative;
+  }
+  .sidebar.collapsed { min-width: var(--sidebar-collapsed-width); max-width: var(--sidebar-collapsed-width); }
+  .sidebar-header { padding: 24px 20px; background: var(--primary-gradient); color: white; transition: all 0.3s; }
+  .sidebar.collapsed .sidebar-header { padding: 24px 10px; text-align: center; }
+  .sidebar-brand-text { transition: opacity 0.2s; }
+  .sidebar.collapsed .sidebar-brand-text { display: none; }
+  .sidebar-menu { padding: 20px 0; flex: 1; overflow-y: auto; }
+
+  .nav-item-side {
+    display: flex; align-items: center; padding: 14px 24px; color: #64748b;
+    cursor: pointer; text-decoration: none; transition: all 0.2s ease; margin: 4px 12px; border-radius: 14px; position: relative;
+  }
+  .sidebar.collapsed .nav-item-side { padding: 14px 0; justify-content: center; margin: 4px 8px; }
+  .nav-item-side:hover { background-color: #fdf2fb; color: var(--primary-color); }
+  .nav-item-side.active { background: var(--primary-gradient); color: white !important; box-shadow: 0 8px 16px rgba(163, 29, 142, 0.2); }
+
+  .nav-icon-img { width: 26px; height: 26px; object-fit: contain; transition: transform 0.2s ease; }
+  .nav-item-side.active .nav-icon-img { transform: scale(1.1); filter: brightness(0) invert(1); }
+  .nav-text-side { margin-left: 15px; font-weight: 600; font-size: 0.95rem; white-space: nowrap; transition: opacity 0.2s; }
+  .sidebar.collapsed .nav-text-side { display: none; }
+
+  .badge-side {
+    position: absolute; top: 10px; right: 15px; background-color: #ff4757; color: white;
+    font-size: 10px; font-weight: bold; border-radius: 50%; min-width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center; border: 1.5px solid white;
+  }
+  .sidebar.collapsed .badge-side { top: 4px; right: 12px; }
+
+  /* --- 3. Main Content Area --- */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; height: 100vh; }
+  .main-header { background: white; padding: 15px 30px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.03); z-index: 1030; }
+  .toggle-sidebar-btn { background: #f1f5f9; border: none; padding: 8px 12px; border-radius: 10px; color: var(--primary-color); font-size: 1.3rem; cursor: pointer; }
+  .content-body { flex: 1; overflow-y: auto; padding: 30px; }
+
+  /* --- 4. Core Elements Adjustments --- */
+  .page { display: none; animation: slideUp 0.3s ease-out; }
+  .active-page { display: block !important; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  .spin-animation { animation: spin 0.8s linear infinite; display: inline-block; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .page h4, .page h5 { 
+    display: inline-flex; align-items: center; background: white; padding: 10px 20px; 
+    border-radius: 15px; box-shadow: var(--card-shadow); margin-bottom: 25px; 
+    color: #1a202c; border-left: 6px solid var(--primary-color); font-weight: 600; font-size: 1.2rem; 
+  }
+
+  .item-card { background: white; border: none; border-radius: 20px; margin-bottom: 20px; padding: 20px; box-shadow: var(--card-shadow); }
+  .approval-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; border-top: 1px solid #edf2f7; padding-top: 10px; }
+  .approval-box { background: #fdfdfd; border: 1px solid #f0f0f0; border-radius: 12px; padding: 8px; text-align: center; }
+  .sig-placeholder { font-size: 11px; font-weight: bold; color: #198754; margin-top: 4px; }
+  .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sig-wrapper { border: 2px dashed #cbd5e0; background: #fff; border-radius: 20px; margin-top: 10px; position: relative; overflow: hidden; }
+  canvas { width: 100%; height: 140px; cursor: crosshair; }
+  .approval-info-box { background-color: #fdf2fb; border-radius: 15px; padding: 16px; margin-bottom: 15px; border: 1px solid #f9d8f3; }
+  
+  /* --- 5. Responsive Styles (Mobile & Tablet) --- */
+  @media(max-width: 768px) {
+    .sidebar { position: absolute; left: calc(var(--sidebar-width) * -1); height: 100vh; }
+    .sidebar.active-mobile { left: 0; }
+    .sidebar.collapsed { left: calc(var(--sidebar-width) * -1); }
+    
+    .table-responsive {
+      border-radius: 16px;
+      overflow-x: auto !important; 
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid #edf2f7;
+    }
+    
+    .table-responsive table { font-size: 0.75rem !important; }
+    .table-responsive th, .table-responsive td { padding: 10px 8px !important; }
+    .table-responsive::-webkit-scrollbar { height: 5px; }
+    .table-responsive::-webkit-scrollbar-thumb { background: rgba(163, 29, 142, 0.2); border-radius: 10px; }
+  }
+  .approval-stamp-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #e9ecef;
+  }
+  .stamp-box {
+    text-align: center;
+    position: relative;
+    padding: 5px;
+    border-radius: 10px;
+    background: #fdfdfd;
+  }
+  .stamp-photo-wrapper {
+    width: 65px;
+    height: 80px;
+    margin: 0 auto 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    background: #eee;
+  }
+  .stamp-photo-wrapper img.face {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .stamp-photo-wrapper img.sig {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    height: auto;
+    filter: drop-shadow(0 0 1px white);
+  }
+  .stamp-label { font-size: 0.65rem; font-weight: bold; color: var(--primary-color); display: block; }
+  .stamp-name { font-size: 0.7rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .stamp-date { font-size: 0.6rem; color: #dc3545; font-weight: bold; display: block; margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+  <div class="wrapper">
+    <nav id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <h2 class="h5 mb-0 fw-bold sidebar-brand-text">E-Borrow System</h2>
+        <p class="small opacity-75 mb-0 sidebar-brand-text" style="font-size: 0.75rem;">ระบบยืม-คืนพัสดุอัจฉริยะ</p>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="nav-item-side active" onclick="showPage('page-dashboard', this)">
+          <i class="bi bi-speedometer2 fs-4 me-2 nav-icon-font"></i>
+          <span class="nav-text-side">Dashboard</span>
+        </div>
+        <div class="nav-item-side" onclick="showPage('page-inventory', this)">
+          <i class="bi bi-box-seam fs-4 me-2 nav-icon-font"></i>
+          <span class="nav-text-side">รายการคลังพัสดุ</span>
+        </div>
+        <div class="nav-item-side" onclick="showPage('page-add-stock', this)">
+          <i class="bi bi-box-arrow-in-right fs-4 me-2 nav-icon-font"></i>
+          <span class="nav-text-side">รับเข้าพัสดุ</span>
+        </div>
+        <div class="nav-item-side" onclick="showPage('page-borrow', this)">
+          <i class="bi bi-pencil-square fs-4 me-2 nav-icon-font"></i>
+          <span class="nav-text-side">ยืมพัสดุ</span>
+        </div>
+        <div class="nav-item-side" onclick="showPage('page-approve', this)">
+          <i class="bi bi-clipboard-check fs-4 me-2 nav-icon-font"></i>
+          <span class="nav-text-side">รายการอนุมัติ</span>
+          <span id="nav-badge-approve" class="badge-side" style="display: none;">0</span>
+        </div>
+        <div class="nav-item-side" onclick="showPage('page-return', this)">
+          <i class="bi bi-arrow-counterclockwise fs-4 me-2 nav-icon-font"></i>
+          <span class="nav-text-side">คืนพัสดุ</span>
+          <span id="nav-badge-return" class="badge-side" style="display: none;">0</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main-content">
+      <header class="main-header">
+        <div class="d-flex align-items-center">
+          <button id="sidebarCollapse" class="toggle-sidebar-btn me-3" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+          </button>
+          <h4 class="mb-0 fw-bold text-dark d-none d-sm-block" style="font-size: 1.1rem; background: transparent; padding: 0; box-shadow: none; border: none; margin-bottom: 0;">คลังจัดการข้อมูลหลัก</h4>
+        </div>
+        <div class="d-flex align-items-center">
+          <button onclick="refreshData()" class="btn btn-light text-primary me-3 border-0 shadow-sm rounded-3 px-3 py-2">
+            <i id="refresh-icon" class="bi bi-arrow-clockwise fs-5 align-middle me-1"></i> รีเฟรชข้อมูล
+          </button>
+          <i class="bi bi-person-circle fs-3 text-secondary"></i>
+        </div>
+      </header>
+
+      <div class="content-body">
+        
+        <div id="page-dashboard" class="page active-page">
+          <div class="mb-4 bg-white p-3 rounded-4 shadow-sm border border-light">
+            <div class="row align-items-center">
+              <div class="col-12 col-sm-4 col-md-3 mb-2 mb-sm-0">
+                <label class="small fw-bold text-dark mb-0"><i class="bi bi-geo-alt-fill text-primary me-1"></i> ข้อมูลภูมิภาคที่ตรวจสอบ</label>
+              </div>
+              <div class="col-12 col-sm-8 col-md-9">
+                <select id="dashboardRegionSelect" class="form-select border-2 rounded-3 shadow-none fw-bold text-secondary" style="border-color: #edf2f7; padding: 10px 15px;" onchange="selectDashboardRegion(this.value)">
+                  <option value="ทั้งหมด" selected>🌐 แสดงข้อมูลภาพรวม (ทุกภาค)</option>
+                  <option value="ภาคเหนือ">⛰️ ภาคเหนือ</option>
+                  <option value="ภาคตะวันออกเฉียงเหนือ">🌾 ภาคตะวันออกเฉียงเหนือ (อีสาน)</option>
+                  <option value="ภาคกลาง">🏙️ ภาคกลาง</option>
+                  <option value="ภาคใต้">🌊 ภาคใต้</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-4"> 
+            <div class="col-4">
+              <div class="stat-card p-2 p-sm-3 text-center shadow-sm" style="background: #fff9db; border: 1px solid #ffe066; border-radius: 20px; min-height: 90px; display: flex; flex-direction: column; justify-content: center;">
+                <div class="text-warning fw-bold mb-1" style="font-size: 11px;">รอดำเนินการอนุมัติ</div>
+                <h3 id="stat-pending" class="fw-bold mb-0" style="color: #f08c00; font-size: 24px;">0</h3>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stat-card p-2 p-sm-3 text-center shadow-sm" style="background: #ebfbee; border: 1px solid #b2f2bb; border-radius: 20px; min-height: 90px; display: flex; flex-direction: column; justify-content: center;">
+                <div class="text-success fw-bold mb-1" style="font-size: 11px;">อนุมัติแล้ว (ค้างคืน)</div>
+                <h3 id="stat-completed" class="fw-bold mb-0" style="color: #2b8a3e; font-size: 24px;">0</h3>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stat-card p-2 p-sm-3 text-center shadow-sm" style="background: #e7f5ff; border: 1px solid #a5d8ff; border-radius: 20px; min-height: 90px; display: flex; flex-direction: column; justify-content: center;">
+                <div class="text-info fw-bold mb-1" style="font-size: 11px;">คืนพัสดุสำเร็จ</div>
+                <h3 id="stat-returned" class="fw-bold mb-0" style="color: #1971c2; font-size: 24px;">0</h3>
+              </div>
+            </div>
+          </div>
+          <div id="dashboard-list"></div>
+        </div>
+
+        <div id="page-inventory" class="page">
+          <h4><i class="bi bi-box-seam me-2"></i>รายการคลังพัสดุและสต็อก</h4>
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-4">
+              <div class="stat-card p-4 text-center shadow-sm" onclick="switchInventoryFilter('all')" id="card-inv-all" style="cursor:pointer; background: #e0e7ff; border: 2px solid #c7d2fe; border-radius: 20px;">
+                <div class="text-primary fw-bold mb-1" style="font-size: 12px;">รายการพัสดุทั้งหมด</div>
+                <h3 id="stat-total-items" class="fw-bold mb-0" style="color: #4338ca; font-size: 32px;">0</h3>
+              </div>
+            </div>
+            <div class="col-12 col-sm-4">
+              <div class="stat-card p-4 text-center shadow-sm" onclick="switchInventoryFilter('low')" id="card-inv-low" style="cursor:pointer; background: #fff; border: 1px solid #dee2e6; border-radius: 20px;">
+                <div class="text-warning fw-bold mb-1" style="font-size: 12px;">ใกล้หมด</div>
+                <h3 id="stat-low-stock" class="fw-bold mb-0" style="color: #b45309; font-size: 32px;">0</h3>
+              </div>
+            </div>
+            <div class="col-12 col-sm-4">
+              <div class="stat-card p-4 text-center shadow-sm" onclick="switchInventoryFilter('out')" id="card-inv-out" style="cursor:pointer; background: #fff; border: 1px solid #dee2e6; border-radius: 20px;">
+                <div class="text-danger fw-bold mb-1" style="font-size: 12px;">หมดสต็อก</div>
+                <h3 id="stat-out-of-stock" class="fw-bold mb-0" style="color: #b91c1c; font-size: 32px;">0</h3>
+              </div>
+            </div>
+          </div>
+          <div class="item-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold mb-0 text-dark" id="inventory-list-title">📦 รายการพัสดุทั้งหมดในคลัง</h6>
+              <div class="input-group input-group-sm" style="max-width: 250px;">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" id="pageInvSearchInput" class="form-control border-start-0 ps-0 shadow-none" placeholder="ค้นหารหัสหรือชื่อพัสดุ..." onkeyup="filterPageInventory()">
+              </div>
+            </div>
+            <div id="pageInventoryContent" class="list-group list-group-flush border-top"></div>
+          </div>
+        </div>
+
+        <div id="page-add-stock" class="page">
+          <h4><i class="bi bi-box-seam me-2"></i>รับเข้าพัสดุ</h4>
+          <div class="card border-0 shadow-sm rounded-4 p-4">
+            <form id="restock-form">
+              <div class="mb-3"><label class="form-label small fw-bold">รหัสพัสดุ (ID)</label><input type="text" id="restock-id" class="form-control" required></div>
+              <div class="mb-3"><label class="form-label small fw-bold">ชื่อพัสดุ</label><input type="text" id="restock-name" class="form-control"></div>
+              <div class="row"><div class="col-6 mb-3"><label class="form-label small fw-bold">จำนวน</label><input type="number" id="restock-qty" class="form-control" value="1" required></div><div class="col-6 mb-3"><label class="form-label small fw-bold">หน่วยนับ</label><input type="text" id="restock-unit" class="form-control" placeholder="ชิ้น, เส้น"></div></div>
+              <button type="submit" class="btn btn-success w-100 rounded-pill py-2 mt-3">ยืนยันการรับเข้า</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="page-approve" class="page">
+          <h5><i class="bi bi-clipboard-check me-2"></i>รายการรออนุมัติ</h5>
+          <div id="approval-list"></div>
+        </div>
+
+        <div id="page-borrow" class="page">
+          <div class="item-card">
+            <h5 class="fw-bold mb-4">📝 บันทึกการยืม</h5>
+            <form id="borrowForm">
+              <div class="mb-3"><label class="small fw-bold text-primary">วันที่ยืม</label><input type="date" id="borrowDateInput" class="form-control" required></div>
+              <div class="row g-2 mb-3">
+                <div class="col-12 col-md-3"><label class="small fw-bold text-primary">ชื่อผู้ยืม</label><input type="text" id="uName" class="form-control" placeholder="ชื่อ-นามสกุล" required></div>
+                <div class="col-6 col-md-2"><label class="small fw-bold text-primary">รหัสพนักงาน</label><input type="text" id="uId" class="form-control" placeholder="ระบุรหัส" required></div>
+                <div class="col-6 col-md-3"><label class="small fw-bold text-primary">สังกัด/แผนก</label><input type="text" id="uDept" class="form-control" placeholder="ระบุแผนก" required></div>
+                <div class="col-6 col-md-2">
+                  <label class="small fw-bold text-primary">ภาค</label>
+                  <select id="uRegion" class="form-select" required>
+                    <option value="" disabled selected>เลือกภาค...</option>
+                    <option value="ภาคเหนือ">ภาคเหนือ</option>
+                    <option value="ภาคตะวันออกเฉียงเหนือ">ภาคตะวันออกเฉียงเหนือ</option>
+                    <option value="ภาคกลาง">ภาคกลาง</option>
+                    <option value="ภาคใต้">ภาคใต้</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-2">
+                  <label class="small fw-bold text-primary">เขต</label>
+                  <select id="uArea" class="form-select" required>
+                    <option value="" disabled selected>เลือกเขต...</option>
+                    <option value="เขต 1">เขต 1</option>
+                    <option value="เขต 2">เขต 2</option>
+                    <option value="เขต 3">เขต 3</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                  <label class="small fw-bold text-primary">รายการพัสดุ</label>
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="addItemRow()"><i class="bi bi-plus-lg me-1"></i> เพิ่มรายการ</button>
+                </div>
+                <div id="items-container"></div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 py-3 rounded-4 fw-bold shadow"><i class="bi bi-send-fill me-2"></i>ส่งคำขอการยืม</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="page-return" class="page">
+          <h4><i class="bi bi-arrow-repeat me-2"></i>คืนพัสดุ</h4>
+          <div id="return-selector-list" class="list-group mb-4 rounded-4 shadow-sm"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="inventoryPickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content rounded-4 border-0 shadow">
+        <div class="modal-header border-0 bg-light pb-0"><h6 class="modal-title fw-bold">📦 เลือกพัสดุเพื่อบันทึกการยืม</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="px-3 pt-2 pb-2 bg-light">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+            <input type="text" id="pickerSearchInput" class="form-control border-start-0 ps-0 shadow-none" placeholder="ค้นหารหัสหรือชื่อพัสดุ..." onkeyup="filterPickerInventory()">
+          </div>
+        </div>
+        <div class="modal-body p-0"><div id="pickerModalList" class="list-group list-group-flush"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="dashReturnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 pb-0"><h6 class="fw-bold mb-0">🔄 เลือกรายการที่ต้องการส่งคืน</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body p-4">
+          <div id="dashReturnInfo"></div> 
+          <div class="mb-3">
+            <label class="small fw-bold text-primary mb-2"><i class="bi bi-check2-all me-1"></i> รายการพัสดุที่ยืม:</label>
+            <div id="dash-item-checklist" class="list-group rounded-3 shadow-sm" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee;"></div>
+          </div>
+          <div class="alert alert-info small border-0 rounded-3 mb-4"><i class="bi bi-info-circle-fill me-2"></i> รายการที่เลือกจะถูกเปลี่ยนสถานะเป็น <b>"กำลังส่งคืน"</b> เพื่อรอการยืนยันรับของที่หน้าคืนพัสดุ</div>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-primary py-2 rounded-pill fw-bold shadow-sm" onclick="confirmReturnFromDash(this)"><i class="bi bi-send-check me-2"></i>ดำเนินการส่งคืนรายการที่เลือก</button>
+            <button type="button" class="btn btn-light py-2 rounded-pill text-muted" data-bs-dismiss="modal">ยกเลิก</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="returnModal" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 pb-0">
+          <h6 class="fw-bold mb-0">📦 บันทึกการรับคืนพัสดุ</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopReturnWebcam()"></button>
+        </div>
+        <div class="modal-body p-4 pt-2">
+          <div id="returnItemInfo"></div>
+          <div class="mb-3">
+            <label class="small fw-bold text-primary mb-2"><i class="bi bi-card-checklist me-1"></i> เลือกรายการที่จะคืน:</label>
+            <div id="checkable-return-list" class="list-group rounded-3 shadow-sm" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee;"></div>
+          </div>
+          <form id="returnForm">
+            <input type="hidden" id="retRow">
+            <div class="mb-3"><label class="small fw-bold text-primary mb-1">วันที่คืน</label><input type="date" id="retDate" class="form-control mb-2" required></div>
+            <div class="mb-3"><label class="small fw-bold text-primary mb-1">ชื่อผู้รับคืน</label><input type="text" id="retReceiver" placeholder="ชื่อ-นามสกุล ผู้รับคืน" class="form-control mb-2" required></div>
+            
+            <div class="mb-3 text-center">
+              <label class="form-label small fw-bold text-primary d-block text-start"><i class="bi bi-camera-fill me-1"></i> กล้องถ่ายรูปผู้รับคืน (Face Verification)</label>
+              <div class="bg-dark rounded-4 overflow-hidden position-relative shadow-sm" style="width: 100%; max-width: 320px; height: 240px; margin: 0 auto;">
+                <video id="retWebcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <div id="ret-snapshot-overlay" class="position-absolute top-0 start-0 w-100 h-100" style="display: none; background: #000;">
+                  <img id="ret-snapshot-img" style="width: 100%; height: 100%; object-fit: cover;">
+                  <div class="position-absolute bottom-0 start-50 translate-middle-x mb-2">
+                    <span class="badge bg-success rounded-pill px-2.5 py-1.5 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-check-circle-fill"></i> จับภาพสำเร็จ</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="d-flex justify-content-center gap-2 mt-2">
+                <button type="button" id="btn-ret-capture" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" onclick="takeReturnSnapshot()"><i class="bi bi-camera"></i> กดถ่ายรูป</button>
+                <button type="button" id="btn-ret-retake" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="retakeReturnSnapshot()" style="display: none;"><i class="bi bi-arrow-counterclockwise"></i> ถ่ายใหม่</button>
+                <button type="button" id="btn-ret-toggle" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-bold" onclick="switchReturnCamera()"><i class="bi bi-arrow-repeat"></i> สลับกล้อง</button>
+              </div>
+              <canvas id="return-capture-canvas" style="display: none;"></canvas>
+            </div>
+
+            <div class="mb-4">
+              <label class="small fw-bold text-primary mb-1">ลายเซ็นผู้รับคืน</label>
+              <div class="sig-wrapper"><canvas id="pad-return"></canvas><div class="text-end p-1"><button type="button" class="btn btn-sm text-danger border-0" onclick="spReturn.clear()">ล้าง</button></div></div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold shadow-sm">บันทึกการรับคืนพัสดุ</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="approveModal" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 pb-0">
+          <h6 class="fw-bold mb-0">✒️ เซ็นอนุมัติพัสดุ</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopWebcamStream()"></button>
+        </div>
+        <div class="modal-body p-4 pt-2">
+          <div id="modalItemInfoNew"></div>
+          <hr class="my-3 opacity-25">
+          
+          <div class="mb-3 mt-3">
+            <label class="small fw-bold text-primary mb-2"><i class="bi bi-camera-video-fill me-1"></i> กล้องถ่ายรูปยืนยันตัวตน (Face Verification)</label>
+            
+            <div class="rounded-4 overflow-hidden border bg-dark position-relative shadow-sm" style="width: 100%; max-width: 320px; height: 240px; margin: 0 auto;">
+              <video id="webcam-preview" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+              
+              <div id="snapshot-preview-overlay" class="position-absolute top-0 start-0 w-100 h-100" style="display: none; background: #000;">
+                <img id="snapshot-img" style="width: 100%; height: 100%; object-fit: cover;">
+                <div class="position-absolute bottom-0 start-50 translate-middle-x mb-2">
+                  <span class="badge bg-success rounded-pill px-2.5 py-1.5 shadow-sm" style="font-size: 0.7rem;"><i class="bi bi-check-circle-fill"></i> จับภาพสำเร็จ</span>
+                </div>
+              </div>
+
+              <div class="position-absolute top-50 start-50 translate-middle text-white opacity-25" id="camera-loading">
+                <div class="spinner-border spinner-border-sm me-1"></div> กำลังเปิดกล้อง...
+              </div>
+            </div>
+            
+            <div class="d-flex justify-content-center gap-2 mt-3">
+              <button type="button" id="btn-capture-snapshot" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-bold" onclick="takeSnapshot()">
+                <i class="bi bi-camera-fill me-1"></i> กดถ่ายรูป
+              </button>
+              <button type="button" id="btn-retake-snapshot" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold" onclick="retakeSnapshot()" style="display: none;">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> ถ่ายใหม่
+              </button>
+              <button type="button" id="btn-toggle-camera" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-bold" onclick="switchCamera()">
+                <i class="bi bi-arrow-repeat me-1"></i> สลับกล้อง
+              </button>
+            </div>
+
+            <canvas id="camera-capture-canvas" style="display: none;"></canvas>
+          </div>
+
+          <hr class="my-3 opacity-25">
+          
+          <div id="card-step1" style="display:none;">
+            <label class="small fw-bold text-primary mb-1">ขั้นตอนที่ 1: หัวหน้าแผนก</label>
+            <input type="text" id="name1" placeholder="ชื่อ-นามสกุล ผู้อนุมัติ" class="form-control mb-2 shadow-none">
+            <input type="text" id="pos1" placeholder="ตำแหน่ง" class="form-control mb-2 shadow-none">
+            <div class="sig-wrapper">
+              <canvas id="pad1"></canvas>
+              <div class="text-end p-1"><button type="button" class="btn btn-sm text-danger border-0" onclick="sp1.clear()">ล้างลายเซ็น</button></div>
+            </div>
+            <button type="button" class="btn btn-primary w-100 mt-3 rounded-pill py-2 fw-bold shadow-sm" onclick="confirmStep(1)">บันทึกการอนุมัติ</button>
+          </div>
+          
+          <div id="card-step2" style="display:none;">
+            <label class="small fw-bold text-primary mb-1">ขั้นตอนที่ 2: ผู้จัดการ</label>
+            <input type="text" id="name2" placeholder="ชื่อ-นามสกุล ผู้อนุมัติ" class="form-control mb-2 shadow-none">
+            <input type="text" id="pos2" placeholder="ตำแหน่ง" class="form-control mb-2 shadow-none">
+            <div class="sig-wrapper">
+              <canvas id="pad2"></canvas>
+              <div class="text-end p-1"><button type="button" class="btn btn-sm text-danger border-0" onclick="sp2.clear()">ล้างลายเซ็น</button></div>
+            </div>
+            <button type="button" class="btn btn-primary w-100 mt-3 rounded-pill py-2 fw-bold shadow-sm" onclick="confirmStep(2)">บันทึกการอนุมัติ</button>
+          </div>
+          
+          <div id="card-step3" style="display:none;">
+            <label class="small fw-bold text-primary mb-1">ขั้นตอนที่ 3: ผู้ควบคุมพัสดุ</label>
+            <input type="text" id="name3" placeholder="ชื่อ-นามสกุล ผู้อนุมัติ" class="form-control mb-2 shadow-none">
+            <input type="text" id="pos3" placeholder="ตำแหน่ง" class="form-control mb-2 shadow-none">
+            <div class="sig-wrapper">
+              <canvas id="pad3"></canvas>
+              <div class="text-end p-1"><button type="button" class="btn btn-sm text-danger border-0" onclick="sp3.clear()">ล้างลายเซ็น</button></div>
+            </div>
+            <button type="button" class="btn btn-primary w-100 mt-3 rounded-pill py-2 fw-bold shadow-sm" onclick="confirmStep(3)">บันทึกการอนุมัติ</button>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="viewDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 bg-light pb-2"><h6 class="fw-bold mb-0">🔍 รายละเอียดประวัติพัสดุฉบับสมบูรณ์</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body p-4" id="viewDetailModalBody"></div>
+        <div class="modal-footer border-0 pt-0"><button type="button" class="btn btn-secondary w-100 rounded-pill py-2 fw-bold" data-bs-dismiss="modal">ปิดหน้าต่าง</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="cancelReasonModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 pb-0"><h6 class="fw-bold text-danger mb-0"><i class="bi bi-exclamation-triangle-fill"></i> ระบุเหตุผลการยกเลิกใบงาน</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body p-4 pt-2">
+          <input type="hidden" id="cancelTsKey"><input type="hidden" id="cancelEmpId">
+          <div class="mb-3">
+            <label class="small fw-bold text-secondary mb-1">เหตุผลความจำเป็นในการยกเลิก:</label>
+            <textarea id="cancelReasonInput" class="form-control rounded-3 shadow-none border-2" rows="3" placeholder="เช่น กรอกข้อมูลรายการผิด หรือยกเลิกหน้างาน..." required></textarea>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-danger py-2 rounded-pill fw-bold shadow-sm" onclick="submitCancelOrder(this)"><i class="bi bi-trash-fill me-1"></i>ยืนยันส่งเรื่องยกเลิกบิล</button>
+            <button type="button" class="btn btn-light py-2 rounded-pill text-muted" data-bs-dismiss="modal">ปิด</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 🎯 [อัปเดตลิงก์สคริปต์จำลองสำเร็จ] ผูกเชื่อมก้อนเซิร์ฟเวอร์ตัวเทสเรียบร้อย
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbx4EiKhXlFmcsLzPUdKS2VfR4WAVLnfaGxD_Kkro55PYNp3rGOGiDglPRHECHmkermD/exec";
+
+    const sp1 = new SignaturePad(document.getElementById('pad1'));
+    const sp2 = new SignaturePad(document.getElementById('pad2'));
+    const sp3 = new SignaturePad(document.getElementById('pad3'));
+    const spReturn = new SignaturePad(document.getElementById('pad-return'));
+    
+    let currentFacingMode = "user"; 
+    let returnFacingMode = "user";  
+    
+    let capturedPhotoBase64 = null; 
+    let returnPhotoBase64 = null; 
+    let currentItem = null;
+    let currentInventoryData = [];
+    let activeRowElement = null;
+    let selectedDashItem = null;
+    let lastInventoryType = 'all'; 
+    let lastDashboardType = 'pending'; 
+    let currentSelectedRegion = 'ทั้งหมด';
+    let webcamStream = null;
+    let returnWebcamStream = null;
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      if (window.innerWidth <= 768) sidebar.classList.toggle('active-mobile');
+      else sidebar.classList.toggle('collapsed');
+    }
+
+    function showPage(pageId, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+      document.getElementById(pageId).classList.add('active-page');
+      document.querySelectorAll('.nav-item-side').forEach(n => n.classList.remove('active'));
+      if (el) el.classList.add('active');
+      if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active-mobile');
+
+      updateDashboardStats();
+      if (pageId === 'page-dashboard') { loadDashboardList(lastDashboardType); }
+      else if (pageId === 'page-inventory') { loadInventoryStats(); }
+      else if (pageId === 'page-approve') loadPendingList();
+      else if (pageId === 'page-return') loadReturnList();
+    }
+
+    function loadInventoryStats() {
+      fetch(`${GAS_URL}?action=getInventorySummary`)
+        .then(res => { if(!res.ok) throw new Error('Network error'); return res.json(); })
+        .then(items => {
+          currentInventoryData = items;
+          document.getElementById('stat-total-items').innerText = items.length;
+          document.getElementById('stat-low-stock').innerText = items.filter(i => i.stock > 0 && i.stock < 5).length;
+          document.getElementById('stat-out-of-stock').innerText = items.filter(i => i.stock <= 0).length;
+          renderPageInventoryList(); 
+        })
+        .catch(err => console.error("Error stock stats:", err));
+    }
+
+    function switchInventoryFilter(type) {
+      lastInventoryType = type;
+      const cards = { 'all': 'card-inv-all', 'low': 'card-inv-low', 'out': 'card-inv-out' };
+      const borderStyles = { 'all': '2px solid #c7d2fe', 'low': '2px solid #fde68a', 'out': '2px solid #fecaca' };
+      const bgStyles = { 'all': '#e0e7ff', 'low': '#fef3c7', 'out': '#fee2e2' };
+      const titleTexts = { 'all': '📦 รายการพัสดุทั้งหมดในคลัง', 'low': '⚠️ รายการพัสดุใกล้หมดสต็อก', 'out': '🚫 รายการพัสดุหมดสต็อก' };
+
+      Object.keys(cards).forEach(k => {
+        const el = document.getElementById(cards[k]);
+        if (k === type) {
+          el.style.background = bgStyles[k];
+          el.style.border = borderStyles[k];
+        } else {
+          el.style.background = '#fff';
+          el.style.border = '1px solid #dee2e6';
+        }
+      });
+
+      document.getElementById('inventory-list-title').innerText = titleTexts[type];
+      renderPageInventoryList();
+    }
+
+    function renderPageInventoryList() {
+      const listDiv = document.getElementById('pageInventoryContent');
+      let filtered = currentInventoryData;
+
+      if (lastInventoryType === 'low') filtered = currentInventoryData.filter(i => i.stock > 0 && i.stock < 5);
+      else if (lastInventoryType === 'out') filtered = currentInventoryData.filter(i => i.stock <= 0);
+
+      const searchText = document.getElementById('pageInvSearchInput').value.toLowerCase();
+      if (searchText) {
+        filtered = filtered.filter(item => item.itemName.toLowerCase().includes(searchText) || item.id.toLowerCase().includes(searchText));
+      }
+
+      if (filtered.length === 0) {
+        listDiv.innerHTML = '<div class="text-center p-4 text-muted small">ไม่พบข้อมูลพัสดุตามเงื่อนไข</div>';
+        return;
+      }
+
+      listDiv.innerHTML = filtered.map(item => {
+        let badgeClass = item.stock <= 0 ? 'bg-danger' : (item.stock < 5 ? 'bg-warning' : 'bg-primary');
+        return `
+          <div class="list-group-item border-start-0 border-end-0 px-1 py-3 bg-transparent">
+            <div class="d-flex justify-content-between align-items-center">
+              <div style="flex:1;">
+                <div class="fw-bold text-dark">${item.itemName}</div>
+                <div class="text-muted small">รหัสพัสดุ: ${item.id}</div>
+              </div>
+              <div class="text-end d-flex align-items-center">
+                <div class="me-3"><span class="badge ${badgeClass} rounded-pill px-3 py-2" style="font-size:0.85rem;">คงเหลือ: ${item.stock} ${item.unit}</span></div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function filterPageInventory() { renderPageInventoryList(); }
+
+    function openPicker(el) { 
+      activeRowElement = el.closest('.item-row'); 
+      if (document.getElementById('pickerSearchInput')) document.getElementById('pickerSearchInput').value = '';
+      renderPickerList(currentInventoryData);
+      new bootstrap.Modal(document.getElementById('inventoryPickerModal')).show(); 
+    }
+
+    function renderPickerList(data) {
+      const listDiv = document.getElementById('pickerModalList');
+      const searchText = document.getElementById('pickerSearchInput').value.toLowerCase();
+      let filtered = data;
+      if (searchText) {
+        filtered = data.filter(item => item.itemName.toLowerCase().includes(searchText) || item.id.toLowerCase().includes(searchText));
+      }
+      listDiv.innerHTML = filtered.map(item => {
+        let badgeClass = item.stock <= 0 ? 'bg-danger' : (item.stock < 5 ? 'bg-warning' : 'bg-primary');
+        return `
+          <div class="list-group-item border-start-0 border-end-0 px-3 py-3" onclick="selectItemFromPicker('${item.id}', '${item.itemName.replace(/'/g, "\\'")}', '${item.unit}', ${item.stock})" style="cursor:pointer;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div><div class="fw-bold text-dark">${item.itemName}</div><div class="text-muted small">ID: ${item.id}</div></div>
+              <div class="text-end"><span class="badge ${badgeClass} rounded-circle d-inline-flex align-items-center justify-content-center" style="width:28px; height:28px;">${item.stock}</span></div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+    function filterPickerInventory() { renderPickerList(currentInventoryData); }
+
+    function selectItemFromPicker(id, name, unit, stock) {
+      if (stock <= 0) return alert("⚠️ พัสดุหมดสต็อก");
+      if (activeRowElement) {
+        activeRowElement.querySelector('.iId').value = id;
+        activeRowElement.querySelector('.iName').value = name;
+        activeRowElement.querySelector('.iUnit').innerText = unit || 'หน่วย';
+        activeRowElement.querySelector('.iQty').max = stock;
+        activeRowElement.querySelector('.iQty').placeholder = "สูงสุด " + stock;
+        activeRowElement.querySelector('.iQty').focus();
+      }
+      bootstrap.Modal.getInstance(document.getElementById('inventoryPickerModal')).hide();
+    }
+
+    function addItemRow() {
+      const container = document.getElementById('items-container');
+      const div = document.createElement('div');
+      div.className = 'item-row border p-3 rounded-4 mb-3 bg-white position-relative shadow-sm';
+      div.innerHTML = `
+        <button type="button" class="btn-close position-absolute top-0 end-0 m-2" style="font-size:0.6rem" onclick="this.parentElement.remove()"></button>
+        <div class="row g-2">
+          <div class="col-12 col-md-4"><label class="small fw-bold text-primary">รหัสพัสดุ</label><input type="text" class="form-control iId bg-white" onclick="openPicker(this)" readonly placeholder="เลือก..."></div>
+          <div class="col-12 col-md-5"><label class="small fw-bold text-primary">ชื่อพัสดุ</label><input type="text" class="form-control iName bg-white" onclick="openPicker(this)" readonly placeholder="เลือก..."></div>
+          <div class="col-12 col-md-3"><label class="small fw-bold">จำนวน</label><div class="input-group"><input type="number" class="form-control iQty" min="1" required><span class="input-group-text small iUnit">หน่วย</span></div></div>
+        </div>`;
+      container.appendChild(div);
+    }
+
+    document.getElementById('borrowForm').onsubmit = function(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const items = []; const rows = document.querySelectorAll('.item-row');
+      if (rows.length === 0) return alert("กรุณาเพิ่มรายการพัสดุอย่างน้อย 1 รายการ");
+      try {
+        rows.forEach(row => {
+          const id = row.querySelector('.iId').value; const name = row.querySelector('.iName').value;
+          const qty = row.querySelector('.iQty').value; const unit = row.querySelector('.iUnit').innerText;
+          if (id && name && qty) { items.push({ itemId: id, itemName: name, itemQty: qty, itemUnit: unit }); }
+        });
+        if (items.length === 0) return alert("กรุณาเลือกพัสดุและระบุจำนวนให้ครบถ้วน");
+        btn.disabled = true; btn.innerText = "กำลังบันทึก...";
+
+        const payloadData = {
+          action: "saveBorrowBatch",
+          payload: {
+            userName: document.getElementById('uName').value, empId: document.getElementById('uId').value,
+            dept: document.getElementById('uDept').value, region: document.getElementById('uRegion').value, area: document.getElementById('uArea').value,
+            date: document.getElementById('borrowDateInput').value, items: items
+          }
+        };
+
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(payloadData) })
+          .then(res => res.json())
+          .then(res => {
+            if(res.success) {
+              alert(res.result); e.target.reset();
+              document.getElementById('items-container').innerHTML = ''; addItemRow(); updateDashboardStats(); 
+              showPage('page-dashboard', document.querySelector('.nav-item-side')); 
+            } else { alert("เกิดข้อผิดพลาด: " + res.error); }
+            btn.disabled = false; btn.innerText = "ส่งคำขอการยืม";
+          })
+          .catch(err => { alert("Error connecting API: " + err.message); btn.disabled = false; btn.innerText = "ส่งคำขอการยืม"; });
+      } catch (err) { alert("เกิดข้อผิดพลาดภายในแอป: " + err.message); btn.disabled = false; }
+    };
+
+    function updateDashboardStats() {
+      fetch(`${GAS_URL}?action=getDashboardStats&region=${encodeURIComponent(currentSelectedRegion)}`)
+        .then(res => res.json())
+        .then(stats => {
+          if (stats) {
+            document.getElementById('stat-pending').innerText = stats.pending || 0;
+            document.getElementById('stat-completed').innerText = stats.completed || 0;
+            document.getElementById('stat-returned').innerText = stats.returned || 0;
+            updateNavBadges();
+          }
+        }).catch(err => console.error("Error dash stats:", err));
+    }
+
+    // 🎨 ✨ ตารางภาพรวมศูนย์ทุกล็อกในคลังพัสดุ พร้อมกลุ่มแอคชันพรีเมียม (ดวงตา, ดินสอ, ยกเลิกบิล)
+    function loadDashboardList(type) {
+      lastDashboardType = type; 
+      const listDiv = document.getElementById('dashboard-list');
+      listDiv.innerHTML = '<div class="text-center p-4 small text-muted"><div class="spinner-border text-primary spinner-border-sm me-2"></div>กำลังประมวลผลตารางภาพรวม...</div>';
+      
+      fetch(`${GAS_URL}?action=getAllItemsDashboard&region=${encodeURIComponent(currentSelectedRegion)}`)
+        .then(res => res.json())
+        .then(items => {
+          if (!items || items.length === 0) { 
+            listDiv.innerHTML = '<div class="text-center p-5 text-muted small bg-white rounded-4 shadow-sm border">ไม่มีข้อมูลพัสดุในระบบของคลังภูมิภาคนี้</div>'; 
+            return; 
+          }
+        
+          let html = `
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate-fade-in">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                  <thead class="table-light fw-bold" style="background-color: #f8f9fa; border-bottom: 2px solid #edf2f7; white-space: nowrap;">
+                    <tr class="text-dark">
+                      <th class="ps-4 py-3">ชื่อผู้ยืม</th>
+                      <th class="py-3">รหัสพนักงาน</th>
+                      <th class="py-3">สังกัด</th>
+                      <th class="py-3">ภาค/เขต</th>
+                      <th class="py-3">รหัสพัสดุ</th>
+                      <th class="py-3">ชื่อพัสดุ</th>
+                      <th class="py-3">จำนวน</th>
+                      <th class="py-3">วันที่ยืม</th>
+                      <th class="py-3">สถานะ</th>
+                      <th class="pe-4 py-3 text-center" style="min-width: 120px;">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody style="white-space: nowrap;">
+          `;
+
+          items.forEach((group) => {
+            let badgeStyle = "";
+            if (group.status.includes("ยกเลิก")) badgeStyle = "background-color: #fee2e2; color: #991b1b;";
+            else if (group.status === "คืนแล้ว") badgeStyle = "background-color: #e2e8f0; color: #475569;";
+            else if (group.status === "อนุมัติสมบูรณ์") badgeStyle = "background-color: #d1fae5; color: #065f46;";
+            else if (group.status === "กำลังส่งคืน") badgeStyle = "background-color: #e0f2fe; color: #0369a1;";
+            else badgeStyle = "background-color: #fef3c7; color: #92400e;"; 
+
+            group.items.forEach((item, index) => {
+              html += `
+                <tr>
+                  <td class="ps-4 py-3 fw-bold text-dark">${index === 0 ? group.userName : `<span class="text-muted opacity-25">”</span>`}</td>
+                  <td class="py-3 text-dark">${index === 0 ? group.empId : ""}</td>
+                  <td class="py-3 text-dark">${index === 0 ? (group.dept || "-") : ""}</td>
+                  <td class="py-3 text-dark">${index === 0 ? `${group.region || '-'} / ${group.area || '-'}` : ""}</td>
+                  
+                  <td class="py-3 font-monospace text-dark" style="font-size: 0.78rem; font-weight: 600;">${item.itemId}</td>
+                  <td class="py-3 fw-bold text-dark text-wrap">${item.itemName}</td>
+                  <td class="py-3 text-dark">
+                    <span class="fw-bold text-primary" style="font-size: 0.88rem;">${item.itemQty}</span>
+                    <span class="fw-bold">${item.itemUnit || "หน่วย"}</span>
+                  </td>
+                  
+                  <td class="py-3 text-dark">${index === 0 ? group.date : ""}</td>
+                  <td class="py-3">
+                    ${index === 0 ? `<span class="badge px-2.5 py-1.5 rounded-pill fw-semibold" style="font-size: 0.7rem; ${badgeStyle}">${group.status}</span>` : ""}
+                  </td>
+                  
+                  <td class="pe-4 py-2 text-center">
+                    ${index === 0 ? `
+                      <div class="btn-group gap-1">
+                        <button class="btn btn-sm btn-outline-primary rounded-3 px-2 py-1" title="ส่องดูรายละเอียดประวัติฉบับเต็ม" onclick='viewFullDetailsDetail(${JSON.stringify(group)})'><i class="bi bi-eye-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-warning rounded-3 px-2 py-1" title="แก้ไขรายการ" onclick='editDashboardRow(${JSON.stringify(group)})'><i class="bi bi-pencil-fill"></i></button>
+                        <button class="btn btn-sm btn-outline-danger rounded-3 px-2 py-1" title="สั่งยกเลิกบิลยืมพัสดุ" onclick='cancelDashboardRow("${group.tsKey}", "${group.empId}")' ${group.status.includes("ยกเลิก") || group.status === "คืนแล้ว" ? "disabled" : ""}><i class="bi bi-trash-fill"></i></button>
+                      </div>
+                    ` : ""}
+                  </td>
+                </tr>
+              `;
+            });
+          });
+          
+          html += `</tbody></table></div></div>`;
+          listDiv.innerHTML = html;
+        }).catch(err => console.error("Error drawing unified dashboard list:", err));
+    }
+
+    // 👁️ ฟังก์ชันกดรูปดวงตา: แกะข้อมูลหลังบ้านขึ้นระเบิดรายละเอียดสัญญา ภาพถ่ายใบหน้า ลายเซ็นทุกฝ่าย
+    function viewFullDetailsDetail(group) {
+      const getImgHtml = (photoUrl) => {
+        if(!photoUrl || photoUrl === "-" || photoUrl.includes("ไม่ได้แนบ") || photoUrl.includes("ขัดข้อง")) {
+          return `<div class="p-2 text-center text-muted bg-white border border-light rounded-3 small" style="height:100px; display:flex; align-items:center; justify-content:center; font-size:10px;">ไม่มีรูปถ่าย</div>`;
+        }
+        let clean = photoUrl;
+        if (photoUrl.includes("id=")) {
+          let matches = photoUrl.match(/id=([^&"'\s)]+)/);
+          if (matches) clean = "https://drive.google.com/thumbnail?id=" + matches[1] + "&sz=w300";
+        }
+        return `<img src="${clean}" class="rounded-3 shadow-sm border border-light" style="width:100%; height:105px; object-fit:cover; display:block;">`;
+      };
+
+      let itemsLi = (group.items || []).map((p, idx) => `
+        <div class="d-flex justify-content-between border-bottom py-1.5" style="border-color:#edf2f7 !important;">
+          <span><b>${idx + 1}.</b> ${p.itemName} <small class="text-muted">(${p.itemId})</small></span>
+          <span class="text-primary fw-bold">${p.itemQty} <span class="text-dark small">${p.itemUnit}</span></span>
+        </div>
+      `).join('');
+
+      let detailHtml = `
+        <div class="p-3 rounded-4 bg-light mb-3" style="font-size:0.85rem;">
+          <h6 class="fw-bold text-dark mb-2 border-bottom pb-1"><i class="bi bi-person-badge text-primary"></i> ข้อมูลบิลผู้ขอยืม</h6>
+          <div class="text-dark"><b>ชื่อผู้ยืม:</b> ${group.userName} | <b>รหัสพนักงาน:</b> ${group.empId}</div>
+          <div class="text-dark"><b>สังกัดแผนก:</b> ${group.dept} | <b>ภาค-เขต:</b> ${group.region} / ${group.area}</div>
+          <div class="text-dark"><b>วันที่ยืมพัสดุ:</b> ${group.date}</div>
+          <div class="text-dark mt-1"><b>สถานะปัจจุบัน:</b> <span class="badge text-dark rounded-pill border" style="background: #fff; font-size:0.75rem;">${group.status}</span></div>
+        </div>
+        
+        <div class="p-3 rounded-4 bg-light mb-3" style="font-size:0.85rem;">
+          <h6 class="fw-bold text-dark mb-2 border-bottom pb-1"><i class="bi bi-box-seam text-info"></i> รายการพัสดุที่ขอเบิกยืม</h6>
+          <div>${itemsLi}</div>
+        </div>
+        
+        <h6 class="fw-bold text-dark mb-2 small ps-1"><i class="bi bi-shield-check text-success"></i> ตรรกะและประวัติการเซ็นแสตมป์อนุมัติ</h6>
+        <div class="row g-2 text-center mb-3">
+          <div class="col-4 border-end">
+            <small class="fw-bold text-secondary d-block" style="font-size:0.65rem;">1. หัวหน้าแผนก</small>
+            <div class="my-1.5 mx-auto" style="width:70px; height:95px;">${getImgHtml(group.appr1?.photo)}</div>
+            <span class="small d-block text-dark text-truncate fw-bold">(${group.appr1?.name && group.appr1.name !== "-" ? group.appr1.name : 'รออนุมัติ'})</span>
+          </div>
+          <div class="col-4 border-end">
+            <small class="fw-bold text-secondary d-block" style="font-size:0.65rem;">2. ผู้จัดการ</small>
+            <div class="my-1.5 mx-auto" style="width:70px; height:95px;">${getImgHtml(group.appr2?.photo)}</div>
+            <span class="small d-block text-dark text-truncate fw-bold">(${group.appr2?.name && group.appr2.name !== "-" ? group.appr2.name : 'รออนุมัติ'})</span>
+          </div>
+          <div class="col-4">
+            <small class="fw-bold text-secondary d-block" style="font-size:0.65rem;">3. คลังพัสดุ</small>
+            <div class="my-1.5 mx-auto" style="width:70px; height:95px;">${getImgHtml(group.appr3?.photo)}</div>
+            <span class="small d-block text-dark text-truncate fw-bold">(${group.appr3?.name && group.appr3.name !== "-" ? group.appr3.name : 'รออนุมัติ'})</span>
+          </div>
+        </div>
+        
+        <div class="p-3 rounded-4 bg-light" style="font-size:0.85rem;">
+          <h6 class="fw-bold text-dark mb-1 border-bottom pb-1"><i class="bi bi-arrow-counterclockwise text-danger"></i> ประวัติการเซ็นตรวจรับคืนสินค้าคลัง</h6>
+          <div class="text-dark"><b>วันที่พนักงานแจ้งส่งคืน:</b> ${group.returnDate || '-'}</div>
+          <div class="text-dark"><b>เจ้าหน้าที่ผู้ตรวจสอบรับคืน:</b> ${group.retReceiver || '-'}</div>
+          <div class="text-dark"><b>วันที่รับของกลับเข้าสต็อก:</b> ${group.receiveDate || '-'}</div>
+        </div>
+      `;
+      document.getElementById('viewDetailModalBody').innerHTML = detailHtml;
+      new bootstrap.Modal(document.getElementById('viewDetailModal')).show();
+    }
+
+    // 📝 ฟังก์ชันแก้ไขใบงาน (ดินสอ)
+    function editDashboardRow(group) {
+      alert(`📝 ฟังก์ชันสิทธิ์การแก้ไขข้อมูลบิลคุณ: ${group.userName}\n(อยู่ระหว่างผูกสิทธิ์ฟอร์มแก้ไขหน้าเว็บเพิ่มเติม)`);
+    }
+
+    // ❌ ฟังก์ชันปุ่มถังขยะเปิดฟอร์มพิมพ์ข้อความเหตุผลยกเลิกบิล
+    function cancelDashboardRow(tsKey, empId) {
+      document.getElementById('cancelTsKey').value = tsKey;
+      document.getElementById('cancelEmpId').value = empId;
+      document.getElementById('cancelReasonInput').value = '';
+      new bootstrap.Modal(document.getElementById('cancelReasonModal')).show();
+    }
+
+    function submitCancelOrder(btn) {
+      const tsKey = document.getElementById('cancelTsKey').value;
+      const empId = document.getElementById('cancelEmpId').value;
+      const reason = document.getElementById('cancelReasonInput').value.trim();
+      if(!reason) return alert("⚠️ กรุณาระบุเหตุผลการยกเลิกบิลก่อนดำเนินการต่อครับ");
+
+      const originalText = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังประมวลผลยกเลิก...';
+
+      const payloadData = {
+        action: "cancelBorrowBatch",
+        payload: { tsKey: tsKey, empId: empId, reason: reason }
+      };
+
+      fetch(GAS_URL, { method: "POST", body: JSON.stringify(payloadData) })
+        .then(res => res.json())
+        .then(res => {
+          bootstrap.Modal.getInstance(document.getElementById('cancelReasonModal')).hide();
+          alert(res.result || "✅ ทำรายการยกเลิกสำเร็จ");
+          refreshData();
+          btn.disabled = false; btn.innerHTML = originalText;
+        }).catch(err => { alert("Error connecting: " + err.message); btn.disabled = false; btn.innerHTML = originalText; });
+    }
+
+    function createApprovalHistoryHtml(approvals) { 
+      if (!approvals) return ''; 
+      const list = approvals.filter(app => app.name && app.sig); 
+      if (!list.length) return ''; 
+      return '<div class="approval-grid">' + list.map(app => `
+        <div class="approval-box">
+          <div class="fw-bold text-primary" style="font-size:8px">${app.label}</div>
+          <div style="font-size:9px" class="truncate">${app.name}</div>
+          <div class="sig-placeholder text-success"><i class="bi bi-patch-check-fill"></i> อนุมัติแล้ว</div>
+        </div>`).join('') + '</div>'; 
+    }
+
+    function resizeCanvas(canvas) { 
+      const ratio = Math.max(window.devicePixelRatio || 1, 1); 
+      canvas.width = canvas.offsetWidth * ratio; canvas.height = canvas.offsetHeight * ratio; 
+      canvas.getContext("2d").scale(ratio, ratio); 
+    }
+
+    window.onload = () => { 
+      fetch(`${GAS_URL}?action=getInventoryList`)
+        .then(res => res.json())
+        .then(data => { currentInventoryData = data; addItemRow(); })
+        .catch(err => console.error("Error initialization:", err));
+
+      showPage('page-dashboard', document.querySelector('.nav-item-side')); 
+      updateNavBadges(); 
+    };
+
+    function refreshData() {
+      const icon = document.getElementById('refresh-icon');
+      icon.classList.add('spin-animation');
+      
+      updateDashboardStats();
+      loadInventoryStats();
+      
+      const activePage = document.querySelector('.page.active-page').id;
+      if (activePage === 'page-dashboard') loadDashboardList(lastDashboardType);
+      if (activePage === 'page-approve') loadPendingList();
+      if (activePage === 'page-return') loadReturnList();
+      
+      updateNavBadges();
+      setTimeout(() => { icon.classList.remove('spin-animation'); }, 1000);
+    }
+
+    function selectDashboardRegion(regionName) {
+      currentSelectedRegion = regionName;
+      const selectElement = document.getElementById('dashboardRegionSelect');
+      if (regionName === 'ทั้งหมด') {
+        selectElement.style.borderColor = '#edf2f7';
+        selectElement.style.color = '#64748b';
+      } else {
+        selectElement.style.borderColor = 'var(--primary-color)';
+        selectElement.style.color = 'var(--primary-color)';
+      }
+      
+      updateDashboardStats();
+      loadDashboardList(lastDashboardType);
+    }
+
+    async function initCamera(facingMode) {
+      document.getElementById('camera-loading').style.display = 'block';
+      document.getElementById('camera-loading').innerHTML = "<div class='spinner-border spinner-border-sm me-1'></div> กำลังเปิดกล้อง...";
+      
+      if (webcamStream) { stopWebcamStream(); }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } }, 
+          audio: false 
+        });
+        webcamStream = stream;
+        const video = document.getElementById('webcam-preview');
+        if ("srcObject" in video) { video.srcObject = stream; } 
+        else { video.src = window.URL.createObjectURL(stream); }
+        document.getElementById('camera-loading').style.display = 'none';
+      } catch (err) {
+        console.error("กล้องอนุมัติขัดข้อง: ", err);
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          webcamStream = fallbackStream;
+          document.getElementById('webcam-preview').srcObject = fallbackStream;
+          document.getElementById('camera-loading').style.display = 'none';
+        } catch (fbErr) {
+          document.getElementById('camera-loading').innerHTML = "<span class='text-danger fw-bold'>❌ กล้องถูกบล็อกการเข้าถึง</span>";
+        }
+      }
+    }
+
+    function stopWebcamStream() {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+    }
+
+    async function switchCamera() {
+      currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+      await initCamera(currentFacingMode);
+    }
+
+    function takeSnapshot() {
+      const video = document.getElementById('webcam-preview');
+      const canvas = document.getElementById('camera-capture-canvas');
+      if (!video || !canvas) return;
+      
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      capturedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+      
+      document.getElementById('snapshot-img').src = capturedPhotoBase64;
+      document.getElementById('snapshot-preview-overlay').style.display = 'block';
+      
+      document.getElementById('btn-capture-snapshot').style.display = 'none';
+      document.getElementById('btn-retake-snapshot').style.display = 'block';
+    }
+
+    function retakeSnapshot() {
+      capturedPhotoBase64 = null;
+      const overlay = document.getElementById('snapshot-preview-overlay');
+      const btnCapture = document.getElementById('btn-capture-snapshot');
+      const btnRetake = document.getElementById('btn-retake-snapshot');
+      
+      if (overlay) overlay.style.display = 'none';
+      if (btnCapture) btnCapture.style.display = 'block';
+      if (btnRetake) btnRetake.style.display = 'none';
+    }
+
+    async function initReturnCamera() {
+      const video = document.getElementById('retWebcam');
+      returnPhotoBase64 = null;
+      document.getElementById('ret-snapshot-overlay').style.display = 'none';
+      if (video) video.style.display = 'block';
+      
+      if (returnWebcamStream) {
+        returnWebcamStream.getTracks().forEach(track => track.stop());
+        returnWebcamStream = null;
+      }
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: returnFacingMode, width: { ideal: 640 }, height: { ideal: 480 } }, 
+          audio: false 
+        });
+        returnWebcamStream = stream;
+        if (video) video.srcObject = stream;
+      } catch (err) {
+        console.error("ระบบกล้องรับคืนโหมด " + returnFacingMode + " ติดขัด: ", err);
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          returnWebcamStream = fallbackStream;
+          if (video) video.srcObject = fallbackStream;
+        } catch (fbErr) {
+          console.error("บล็อกกล้องสมบูรณ์:", fbErr);
+        }
+      }
+    }
+
+    async function switchReturnCamera() {
+      returnFacingMode = (returnFacingMode === "user") ? "environment" : "user";
+      await initReturnCamera();
+    }
+
+    function takeReturnSnapshot() {
+      const video = document.getElementById('retWebcam');
+      const canvas = document.getElementById('return-capture-canvas');
+      const overlay = document.getElementById('ret-snapshot-overlay');
+      const previewImg = document.getElementById('ret-snapshot-img');
+      
+      if (returnWebcamStream && video) {
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        returnPhotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        previewImg.src = returnPhotoBase64;
+        overlay.style.display = 'block';
+        video.style.display = 'none';
+        
+        document.getElementById('btn-ret-capture').style.display = 'none';
+        document.getElementById('btn-ret-retake').style.display = 'block';
+        document.getElementById('btn-ret-toggle').style.display = 'none';
+      }
+    }
+
+    function retakeReturnSnapshot() {
+      returnPhotoBase64 = null;
+      document.getElementById('ret-snapshot-overlay').style.display = 'none';
+      document.getElementById('retWebcam').style.display = 'block';
+      
+      document.getElementById('btn-ret-capture').style.display = 'block';
+      document.getElementById('btn-ret-retake').style.display = 'none';
+      document.getElementById('btn-ret-toggle').style.display = 'block';
+    }
+
+    function stopReturnWebcam() {
+      if (returnWebcamStream) {
+        returnWebcamStream.getTracks().forEach(track => track.stop());
+        returnWebcamStream = null;
+      }
+    }
+  </script>
+</body>
+</html>
